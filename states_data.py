@@ -5,7 +5,7 @@ CC_PATH = 'Indian_States/Indian_States_total_confirmed_cases.csv'
 RC_PATH = 'Indian_States/Indian_States_total_recovered_cases.csv'
 DC_PATH = 'Indian_States/Indian_States_total_Death_toll.csv'
 
-print(date.today())
+#print(date.today())
 
 df_C = pd.read_csv(CC_PATH) 
 df_R = pd.read_csv(RC_PATH) 

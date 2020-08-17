@@ -36,7 +36,7 @@ def notify_me():
             timeout=10,
          
         )
-        time.sleep(1800)
+        time.sleep(30)
 
 
 # creating gui:

@@ -1,0 +1,7 @@
+covid_data: changes
+addition of new classes for leftover data
+exception handling 
+
+matplotlib: live
+panda frame and Mongo DB
+Matilda changes
