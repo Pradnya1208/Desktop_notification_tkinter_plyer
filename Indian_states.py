@@ -113,12 +113,12 @@ with open(DIR_NAME + '/Indian_States_total_confirmed_cases.csv', 'w') as f:
     f.writelines(covidData)
     
 with open(DIR_NAME + '/Indian_States_total_recovered_cases.csv', 'w') as f:
-    f.writelines("State, State Code,")
+    f.writelines("State,State Code,")
     f.writelines(dtcolNames)
     f.writelines(covidRec)
 
 with open(DIR_NAME + '/Indian_States_total_Death_toll.csv', 'w') as f:
-    f.writelines("State, State Code,")
+    f.writelines("State,State Code,")
     f.writelines(dtcolNames)
     f.writelines(covidDeath)
 

@@ -13,11 +13,16 @@ from tkinter import *
 import sys
 from bs4 import BeautifulSoup
 import requests
-
+import plyer
+import time
+import datetime
+import locale
+locale.setlocale(locale.LC_ALL, '')
 
 from Indian_states import state_name
 from nameCorrection import name_correction
 from states_data import merged
+from city_data import notify_app_city_data
 
 import covid_data
 
@@ -245,7 +250,6 @@ class WorldData(tk.Frame):
         self.bannerName(background)
         #self.detailed_info(background, controller)
  
-
     
     def setWidget(self, background,controller):
         load = PIL.Image.open(WORLD_IMG)
@@ -272,9 +276,7 @@ class WorldData(tk.Frame):
                          font = FRAME1_1, fg="White", bg = "black", padx = 10, pady = 10, justify = LEFT)
         f1_label.pack(side=LEFT)
 
-    
-
-
+  
 
 class TT(tk.Frame):
     def __init__(self, parent, controller):
@@ -289,8 +291,7 @@ class TT(tk.Frame):
         self.setWidget(background,controller)
         self.IndiaData(background)
         self.bannerName(background)
-       
-       
+     
  
     def setWidget(self, background,controller):
         load = PIL.Image.open(WORLD_IMG)
@@ -311,7 +312,7 @@ class TT(tk.Frame):
     def IndiaData(self, frame1_back):
         for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
             if "India" in m:
-                frame_text = "Total Cases : " + str(CC) + "\n" + "Total Deaths : " + str(DC) + "\n" + "Recovered : " + str(RC)  
+                frame_text = "Total Cases : " + f'{CC:n}' + "\n" + "Total Deaths : " + f'{DC:n}' + "\n" + "Recovered : " + f'{RC:n}'  
         
         frame_1 = LabelFrame(frame1_back, text = "Covid19 Cases in India", font = FRAME1_FONT, padx=5, pady=10, bg= 'Black', fg ="Red")
         frame_1.place(x=60, y=150)
@@ -327,39 +328,139 @@ class Maharashtra(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         
+        self.t1 = 0
         img = tk.PhotoImage(file=IMAGE_PATH)
         background = tk.Label(self, image=img)
         background.pack(fill=BOTH, expand=1)
         background.image = img
 
-        notify = tk.Button(self, text="Enable Notification", bg="black", fg="White",font = NOTIFY_F, 
-                           padx = 5, pady = 5,command=self.notify)
-        notify.place(x=1,y=1)
-   
-        def change_on_hover(event):
-            notify['bg'] = 'red'
-
-        def return_to_normal(event):
-            notify['bg'] = "black"
+     
+        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+            if "Maharashtra" in m:
+                #print(CC, RC, DC)
+                frame_text = "Total Cases : " + f'{CC:n}' + "\n" + "Total Deaths : " + f'{DC:n}' + "\n" + "Recovered : " + f'{RC:n}'  
+                    
+      
+        def notify(t):
+            if "half hourly" in var.get():
+                self.t1 = 1800
+            if "hourly" in var.get():
+                self.t1 = 3600
+            if "4 hourly" in var.get():
+                self.t1 = 14400
+            if "8 hourly" in var.get():
+                self.t1 = 28800
+            if "12 hourly" in var.get():
+                self.t1 = 43200
+                
+            response = messagebox.askquestion("Desktop Notification settings", "Do you want a city specific Covid19 Notifications?")
+            if response == "yes":
+                messagebox.showinfo("Notification Settings", "\nRIGHT CLICK on the vertices of app window to Select your City")
+            else:  
+                for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+                    if "Maharashtra" in m:
+                        #print(CC, RC, DC)
+                          frame_notify = "Maharashtra => | Total : " + f'{CC:n}' + " | Deaths : "  + f'{DC:n}' + " | Recovered : " + f'{RC:n}'
+                messagebox.showinfo("Notification details","Notification time span is : " + var.get() + "\nNotification Message : " + frame_notify)
+        
+                var.set("Enable Notifications")
+                
+                # calling plyer Notification
+                while True:
+                    plyer.notification.notify( title = "Covid19 cases of Maharashtra",
+                                              message = frame_notify, app_icon = ICON,timeout = 20)
+                    time.sleep(self.t1)
+        
+                self.master.master.destroy()
+        
+             
+        # option menu for time duration
+        var = StringVar()
+        varList = ["half hourly", "hourly", "4 hourly", "8 hourly", "12 hourly"]
+        var.set("Enable Notifications")
+        notifyMenu = OptionMenu(self, var, *varList, command = notify)
+        notifyMenu.configure(bg = "black", fg = "White")
+        notifyMenu.place(x=1, y=1)
+        
             
-        notify.bind('<Enter>', change_on_hover)
-        notify.bind('<Leave>', return_to_normal)
+        self.setWidget(background,controller)
+        self.MHData(background, frame_text)
+        self.bannerName(background)
+      
+  
+      
+   # City list on rightclick         
+        def city_pop(event):
+            m.tk_popup(event.x_root, event.y_root)
+            m.grab_release()
+            
+        m = tk.Menu(background, tearoff = 0)
+      
+        m.add_command(label = 'Ahmednagar', command = lambda:self.notify_func("Ahmednagar", "Maharashtra"))
+        m.add_command(label = 'Akola', command = lambda:self.notify_func("Akola", "Maharashtra"))
+        m.add_command(label = 'Amravati', command = lambda:self.notify_func("Amravati", "Maharashtra"))
+        m.add_command(label = 'Aurangabad', command = lambda:self.notify_func("Aurangabad", "Maharashtra"))
+        m.add_command(label = 'Beed', command = lambda:self.notify_func("Beed", "Maharashtra"))
+        m.add_command(label = 'Bhandara', command = lambda:self.notify_func("Bhandara", "Maharashtra"))
+        m.add_command(label = 'Buldhana', command = lambda:self.notify_func("Buldhana", "Maharashtra"))
+        m.add_command(label = 'Chandrapur', command = lambda:self.notify_func("Chandrapur", "Maharashtra"))
+        m.add_command(label = 'Dhule', command = lambda:self.notify_func("Dhule", "Maharashtra"))
+        m.add_command(label = 'Gadchiroli', command = lambda:self.notify_func("Gadchiroli", "Maharashtra"))
+        m.add_command(label = 'Gondia', command = lambda:self.notify_func("Gondia", "Maharashtra"))
+        m.add_command(label = 'Hingoli', command = lambda:self.notify_func("Hingoli", "Maharashtra"))
+        m.add_command(label = 'Jalgaon', command = lambda:self.notify_func("Jalgaon", "Maharashtra"))
+        m.add_command(label = 'Jalna', command = lambda:self.notify_func("Jalna", "Maharashtra"))
+        m.add_command(label = 'Kolhapur', command = lambda:self.notify_func("Kolhapur", "Maharashtra"))
+        m.add_command(label = 'Latur', command = lambda:self.notify_func("Latur", "Maharashtra"))
+        m.add_command(label = 'Mumbai', command = lambda:self.notify_func("Mumbai", "Maharashtra"))
+        m.add_command(label = 'Nagpur', command = lambda:self.notify_func("Nagpur", "Maharashtra"))
+        m.add_command(label = 'Nanded', command = lambda:self.notify_func("Nanded", "Maharashtra"))
+        m.add_command(label = 'Nandurbar', command = lambda:self.notify_func("Latur", "Maharashtra"))
+        m.add_command(label = 'Latur', command = lambda:self.notify_func("Latur", "Maharashtra"))
+        m.add_command(label = 'Nashik', command = lambda:self.notify_func("Nashik", "Maharashtra"))
+        m.add_command(label = 'Osmanabad', command = lambda:self.notify_func("Osmanabad", "Maharashtra"))
+        m.add_command(label = 'Palghar', command = lambda:self.notify_func("Palghar", "Maharashtra"))
+        m.add_command(label = 'Pune', command = lambda:self.notify_func("Pune", "Maharashtra"))
+        m.add_command(label = 'Raigad', command = lambda:self.notify_func("Raigad", "Maharashtra"))
+        m.add_command(label = 'Ratnagiri', command = lambda:self.notify_func("Ratnagiri", "Maharashtra"))
+        m.add_command(label = 'Sangli', command = lambda:self.notify_func("Sangli", "Maharashtra"))
+        m.add_command(label = 'Satara', command = lambda:self.notify_func("Satara", "Maharashtra"))
+        m.add_command(label = 'Sindhudurg', command = lambda:self.notify_func("Sindhudurg", "Maharashtra"))
+        m.add_command(label = 'Thane', command = lambda:self.notify_func("Thane", "Maharashtra"))
+        m.add_command(label = 'Wardha', command = lambda:self.notify_func("Wardha", "Maharashtra"))
+        m.add_command(label = 'Washim', command = lambda:self.notify_func("Washim", "Maharashtra"))
+        m.add_command(label = 'Yavatmal', command = lambda:self.notify_func("Yavatmal", "Maharashtra"))
         
 
-        self.setWidget(background,controller)
-        self.MHData(background)
-        self.bannerName(background)
-        self.run(background)
-   
+        background.bind("<Button-3>", city_pop)
+      
+      
+                
+    def notify_func(self,city,state):
+        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+                    if "Maharashtra" in m:
+                        #print(CC, RC, DC)
+                          frame_notify_ = "Maharashtra => | Total : " + f'{CC:n}' + " | Deaths : "  + f'{DC:n}' + " | Recovered : " + f'{RC:n}'
+              
+        print(self.t1)
+        print(city, state)
+        city_data = notify_app_city_data(city, state) 
+        for m1, CC_, RC_, DC_ in zip(city_data.index, city_data["Confirmed cases"], city_data["Recovered cases"], city_data["Death toll"]):
+            if city in m1:
+                print(CC_, RC_, DC_)
+                frame_city_text = city + " => Total Cases : " + f'{CC_:n}' + "| Total Deaths : " + f'{DC_:n}' +  "| Recovered : " + f'{RC_:n}' 
+            
+        if  frame_city_text:
+            messagebox.showinfo("Notification Details","Notification Time span is : " + str(self.t1) + " seconds" + "\nState : " + state + "\n" + "City : " + city + "\n" +
+                                "Details : " + frame_city_text)
+            while True:
+                plyer.notification.notify( title = "Covid19 cases of " + state + " ( " + city + " ) ",
+                                          message = frame_notify_ +"\n" + frame_city_text, app_icon = ICON, timeout = 10)
+                time.sleep(self.t1)
+            
        
-    def notify(self):
+            self.master.master.destroy()    
        
-        response = messagebox.askquestion("Desktop Notification settings", "Do you want a city specific Covid19 Notifications?")
-        if response == "yes":
-            messagebox.showinfo("", "Right click on main window to select a City ")
-        else:
-            pass
-            #call plyer function
          
              
     def setWidget(self, background,controller):
@@ -369,7 +470,7 @@ class Maharashtra(tk.Frame):
         img.image = render
         img.place(x=160, y=10)
 
-
+ 
     def bannerName(self, frame0_back):
 
         frame_0 = LabelFrame(frame0_back, padx=2, pady=2, bg='#336699')
@@ -378,14 +479,9 @@ class Maharashtra(tk.Frame):
                          font=FRAME0_FONT, fg="White", bg = 'Black')
         f0_label.pack(side=RIGHT)
 
-    def MHData(self, frame1_back):
+    def MHData(self, frame1_back, frame_text):
         
         
-        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
-            if "Maharashtra" in m:
-                #print(CC, RC, DC)
-                frame_text = "Total Cases : " + str(CC) + "\n" + "Total Deaths : " + str(DC) + "\n" + "Recovered : " + str(RC)  
-                
         frame_1 = LabelFrame(frame1_back, text = "Maharashtra", font = FRAME1_FONT, padx =30, pady =10, bg= 'Black', fg ="Red")
         frame_1.place(x=55, y=150)
 
@@ -393,79 +489,98 @@ class Maharashtra(tk.Frame):
                          font = FRAME1_1, fg="White", bg = "black", justify = LEFT)
         f1_label.pack(side=LEFT)
         
-    def popup(self, frame0_back): 
-        self.popup_menu = tk.Menu(frame0_back, 
-                                       tearoff = 0) 
-      
-        self.popup_menu.add_command(label = "say hi", 
-                                    command = lambda:self.hey("hi")) 
-      
-        self.popup_menu.add_command(label = "say hello", 
-                                    command = lambda:self.hey("hello")) 
-        self.popup_menu.add_separator() 
-        self.popup_menu.add_command(label = "say bye", 
-                                command = lambda:self.hey("bye")) 
-   
-    #display menu on right click 
-    def do_popup(self,event): 
-        try: 
-            self.popup_menu.tk_popup(event.x_root, 
-                                 event.y_root) 
-        finally: 
-            self.popup_menu.grab_release() 
-   
-    def hey(self,s): 
-        self.configure(text = s) 
-      
-    def run(self,frame0_back): 
-        self.popup(frame0_back) 
-        self.bind("<Button-3>",self.do_popup) 
-   
-        
+     
        
 class Andaman_and_Nikobar_Islands(tk.Frame):
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
+        
+        self.t1 = 0
         img = tk.PhotoImage(file=IMAGE_PATH)
         background = tk.Label(self, image=img)
         background.pack(fill=BOTH, expand=1)
         background.image = img
 
-        notify = tk.Button(self, text="Enable Notification", bg="black", fg="White",font = NOTIFY_F, 
-                           padx = 5, pady = 5,command=self.notify)
-        notify.place(x=1,y=1)
-   
-        def change_on_hover(event):
-            notify['bg'] = 'red'
-
-        def return_to_normal(event):
-            notify['bg'] = "black"
+     
+        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+            if "Andaman and Nikobar Islands" in m:
+                #print(CC, RC, DC)
+                frame_text = "Total Cases : " + f'{CC:n}' + "\n" + "Total Deaths : " + f'{DC:n}' + "\n" + "Recovered : " + f'{RC:n}'  
+                    
+      
+        def notify(t):
+            if "half hourly" in var.get():
+                self.t1 = 1800
+            if "hourly" in var.get():
+                self.t1 = 3600
+            if "4 hourly" in var.get():
+                self.t1 = 14400
+            if "8 hourly" in var.get():
+                self.t1 = 28800
+            if "12 hourly" in var.get():
+                self.t1 = 43200
+                
+             
+            for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+                if "Andaman and Nikobar Islands" in m:
+                    #print(CC, RC, DC)
+                      frame_notify = "Andaman and Nikobar Islands => | Total : " + f'{CC:n}' + " | Deaths : "  + f'{DC:n}' + " | Recovered : " + f'{RC:n}'
+            messagebox.showinfo("Notification details","Notification time span is : " + var.get() + "\nNotification Message : " + frame_notify)
+    
+            var.set("Enable Notifications")
             
-        notify.bind('<Enter>', change_on_hover)
-        notify.bind('<Leave>', return_to_normal)
+            # calling plyer Notification
+            while True:
+                plyer.notification.notify( title = "Covid19 cases of Andaman and Nikobar Islands",
+                                          message = frame_notify, app_icon = ICON,timeout = 20)
+                time.sleep(self.t1)
+    
+            self.master.master.destroy()
         
-
-        self.setWidget(background,controller)
-        self.MHData(background)
-        self.bannerName(background)
-   
-       
-    def notify(self):
-       
-        response = messagebox.askquestion("messag box", "Hello world!")
-        if response == "yes":
-            rt = Tk()
-            rt.iconbitmap(ICON)
-            rt.title("Select City")  
-            l = Label(rt, text = "test").pack()
-           
-           
-        else:
-            pass
-            #call plyer function
-  
+             
+        # option menu for time duration
+        var = StringVar()
+        varList = ["half hourly", "hourly", "4 hourly", "8 hourly", "12 hourly"]
+        var.set("Enable Notifications")
+        notifyMenu = OptionMenu(self, var, *varList, command = notify)
+        notifyMenu.configure(bg = "black", fg = "White")
+        notifyMenu.place(x=1, y=1)
+        
             
+        self.setWidget(background,controller)
+        self.ANData(background, frame_text)
+        self.bannerName(background)
+      
+  
+                
+    def notify_func(self,city,state):
+        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+                    if "Andaman and Nikobar Islands" in m:
+                        #print(CC, RC, DC)
+                          frame_notify_ = "Andaman and Nikobar Islands => | Total : " + f'{CC:n}' + " | Deaths : "  + f'{DC:n}' + " | Recovered : " + f'{RC:n}'
+              
+        print(self.t1)
+        print(city, state)
+        city_data = notify_app_city_data(city, state) 
+        for m1, CC_, RC_, DC_ in zip(city_data.index, city_data["Confirmed cases"], city_data["Recovered cases"], city_data["Death toll"]):
+            if city in m1:
+                print(CC_, RC_, DC_)
+                frame_city_text = city + " => Total Cases : " + f'{CC_:n}' + "| Total Deaths : " + f'{DC_:n}' +  "| Recovered : " + f'{RC_:n}' 
+            
+        if  frame_city_text:
+            messagebox.showinfo("Notification Details","Notification Time span is : " + str(self.t1) + " seconds" + "\nState : " + state + "\n" + "City : " + city + "\n" +
+                                "Details : " + frame_city_text)
+            while True:
+                plyer.notification.notify( title = "Covid19 cases of " + state + " ( " + city + " ) ",
+                                          message = frame_notify_ +"\n" + frame_city_text, app_icon = ICON, timeout = 10)
+                time.sleep(self.t1)
+            
+       
+            self.master.master.destroy()    
+       
+         
+             
     def setWidget(self, background,controller):
         load = PIL.Image.open(WORLD_IMG)
         render = ImageTk.PhotoImage(load)
@@ -473,7 +588,7 @@ class Andaman_and_Nikobar_Islands(tk.Frame):
         img.image = render
         img.place(x=160, y=10)
 
-
+ 
     def bannerName(self, frame0_back):
 
         frame_0 = LabelFrame(frame0_back, padx=2, pady=2, bg='#336699')
@@ -482,63 +597,137 @@ class Andaman_and_Nikobar_Islands(tk.Frame):
                          font=FRAME0_FONT, fg="White", bg = 'Black')
         f0_label.pack(side=RIGHT)
 
-    def MHData(self, frame1_back):
+    def ANData(self, frame1_back, frame_text):
         
         
-        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
-            if "Andaman and Nikobar Islands" in m:
-                #print(CC, RC, DC)
-                frame_text = "Total Cases : " + str(CC) + "\n" + "Total Deaths : " + str(DC) + "\n" + "Recovered : " + str(RC)  
-                
-        frame_1 = LabelFrame(frame1_back, text = "Andaman and Nikobar Islands", font = FRAME1_FONT, padx =30, pady =10, bg= 'Black', fg ="Red")
+        frame_1 = LabelFrame(frame1_back, text = "Andaman and Nikobar", font = FRAME1_FONT, padx =30, pady =10, bg= 'Black', fg ="Red")
         frame_1.place(x=55, y=150)
 
         f1_label = Label(frame_1, text=frame_text,
                          font = FRAME1_1, fg="White", bg = "black", justify = LEFT)
         f1_label.pack(side=LEFT)
         
-
+  
                 
 class Andhra_Pradesh(tk.Frame):
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
-
+        
+        self.t1 = 0
         img = tk.PhotoImage(file=IMAGE_PATH)
         background = tk.Label(self, image=img)
         background.pack(fill=BOTH, expand=1)
         background.image = img
 
-        notify = tk.Button(self, text="Enable Notification", bg="black", fg="White",font = NOTIFY_F, 
-                           padx = 5, pady = 5,command=self.notify)
-        notify.place(x=1,y=1)
-   
-        def change_on_hover(event):
-            notify['bg'] = 'red'
 
-        def return_to_normal(event):
-            notify['bg'] = "black"
-            
-        notify.bind('<Enter>', change_on_hover)
-        notify.bind('<Leave>', return_to_normal)
+        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+            if "Andhra Pradesh" in m:
+                #print(CC, RC, DC)
+                frame_text = "Total Cases : " + f'{CC:n}' + "\n" + "Total Deaths : " + f'{DC:n}' + "\n" + "Recovered : " + f'{RC:n}'  
+                    
+      
+        def notify(t):
+            if "half hourly" in var.get():
+                self.t1 = 1800
+            if "hourly" in var.get():
+                self.t1 = 3600
+            if "4 hourly" in var.get():
+                self.t1 = 14400
+            if "8 hourly" in var.get():
+                self.t1 = 28800
+            if "12 hourly" in var.get():
+                self.t1 = 43200
+                
+            response = messagebox.askquestion("Desktop Notification settings", "Do you want a city specific Covid19 Notifications?")
+            if response == "yes":
+                messagebox.showinfo("Notification Settings", "\nRIGHT CLICK on the vertices of app window to Select your City")
+            else:  
+                for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+                    if "Andhra Pradesh" in m:
+                        #print(CC, RC, DC)
+                          frame_notify = "Andhra Pradesh => | Total : " + f'{CC:n}'  + " | Deaths : "  + f'{DC:n}'  + " | Recovered : " + f'{RC:n}' 
+                messagebox.showinfo("Notification details","Notification time span is : " + var.get() + "\nNotification Message : " + frame_notify)
         
-
-        self.setWidget(background,controller)
-        self.MHData(background)
-        self.bannerName(background)
-   
-       
-    def notify(self):
-       
-        response = messagebox.askquestion("messag box", "Hello world!")
-        if response == "yes":
-            notify_fun = tk.Tk()
-        else:
-            pass
-            #call plyer function
-         
-  
+                var.set("Enable Notifications")
+                
+                # calling plyer Notification
+                while True:
+                    plyer.notification.notify( title = "Covid19 cases of Andhra Pradesh",
+                                              message = frame_notify, app_icon = ICON,timeout = 20)
+                    time.sleep(self.t1)
+        
+                self.master.master.destroy()
+        
+             
+        # option menu for time duration
+        var = StringVar()
+        varList = ["half hourly", "hourly", "4 hourly", "8 hourly", "12 hourly"]
+        var.set("Enable Notifications")
+        notifyMenu = OptionMenu(self, var, *varList, command = notify)
+        notifyMenu.configure(bg = "black", fg = "White")
+        notifyMenu.place(x=1, y=1)
+        
             
+        self.setWidget(background,controller)
+        self.APData(background, frame_text)
+        self.bannerName(background)
+      
+  
+      
+   # City list on rightclick         
+        def city_pop(event):
+            m.tk_popup(event.x_root, event.y_root)
+            m.grab_release()
+            
+        m = tk.Menu(background, tearoff = 0)
+        m.add_command(label = 'Anantapur', command = lambda:self.notify_func("Anantapur", "Andhra_Pradesh"))
+        m.add_command(label = 'Chittoor', command = lambda:self.notify_func("Chittoor", "Andhra_Pradesh"))
+        m.add_command(label = 'East Godavari', command = lambda:self.notify_func("East Godavari", "Andhra_Pradesh"))
+        m.add_command(label = 'Guntur', command = lambda:self.notify_func("Guntur", "Andhra_Pradesh"))
+        m.add_command(label = 'Krishna', command = lambda:self.notify_func("Krishna", "Andhra_Pradesh"))
+        m.add_command(label = 'Kurnool', command = lambda:self.notify_func("Kurnool", "Andhra_Pradesh"))
+        m.add_command(label = 'Prakasam', command = lambda:self.notify_func("Prakasam", "Andhra_Pradesh"))
+        m.add_command(label = 'S.P.S. Nellore', command = lambda:self.notify_func("S.P.S. Nellore", "Andhra_Pradesh"))
+        m.add_command(label = 'Srikakulam', command = lambda:self.notify_func("Srikakulam", "Andhra_Pradesh"))
+        m.add_command(label = 'Visakhapatnam', command = lambda:self.notify_func("Visakhapatnam", "Andhra_Pradesh"))
+        m.add_command(label = 'Vizianagaram', command = lambda:self.notify_func("Vizianagaram", "Andhra_Pradesh"))
+        m.add_command(label = 'West Godavari', command = lambda:self.notify_func("West Godavari", "Andhra_Pradesh"))
+        m.add_command(label = 'Y.S.R. Kadapa', command = lambda:self.notify_func("Y.S.R. Kadapa", "Andhra_Pradesh"))
+        
+ 
+        background.bind("<Button-3>", city_pop)
+      
+      
+                
+    def notify_func(self,city,state):
+        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+                    if "Andhra Pradesh" in m:
+                        #print(CC, RC, DC)
+                          frame_notify_ = "Andhra Pradesh => | Total : " + f'{CC:n}'  + " | Deaths : "  + f'{DC:n}'  + " | Recovered : " + f'{RC:n}' 
+              
+        print(self.t1)
+        print(city, state)
+        city_data = notify_app_city_data(city, state) 
+        for m1, CC_, RC_, DC_ in zip(city_data.index, city_data["Confirmed cases"], city_data["Recovered cases"], city_data["Death toll"]):
+        
+            if city in m1:
+                print(CC_, RC_, DC_)
+                frame_city_text = city + " => Total Cases : " + f'{CC_:n}'  + " | Total Deaths : " + f'{DC_:n}'  +  " | Recovered : " + f'{RC_:n}' 
+            
+        if  frame_city_text:
+            messagebox.showinfo("Notification Details","Notification Time span is : " + str(self.t1) + " seconds" + "\nState : " + state + "\n" + "City : " + city + "\n" +
+                                "Details : " + frame_city_text)
+            while True:
+                plyer.notification.notify( title = "Covid19 cases of " + state + " ( " + city + " ) ",
+                                          message = frame_notify_ +"\n" + frame_city_text, app_icon = ICON, timeout = 10)
+                time.sleep(self.t1)
+            
+       
+            self.master.master.destroy()    
+       
+         
+             
     def setWidget(self, background,controller):
         load = PIL.Image.open(WORLD_IMG)
         render = ImageTk.PhotoImage(load)
@@ -546,7 +735,7 @@ class Andhra_Pradesh(tk.Frame):
         img.image = render
         img.place(x=160, y=10)
 
-
+ 
     def bannerName(self, frame0_back):
 
         frame_0 = LabelFrame(frame0_back, padx=2, pady=2, bg='#336699')
@@ -555,61 +744,145 @@ class Andhra_Pradesh(tk.Frame):
                          font=FRAME0_FONT, fg="White", bg = 'Black')
         f0_label.pack(side=RIGHT)
 
-    def MHData(self, frame1_back):
+    def APData(self, frame1_back, frame_text):
         
-        
-        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
-            if "Andhra Pradesh" in m:
-                #print(CC, RC, DC)
-                frame_text = "Total Cases : " + str(CC) + "\n" + "Total Deaths : " + str(DC) + "\n" + "Recovered : " + str(RC)  
-                
         frame_1 = LabelFrame(frame1_back, text = "Andhra Pradesh", font = FRAME1_FONT, padx =30, pady =10, bg= 'Black', fg ="Red")
         frame_1.place(x=55, y=150)
 
         f1_label = Label(frame_1, text=frame_text,
                          font = FRAME1_1, fg="White", bg = "black", justify = LEFT)
         f1_label.pack(side=LEFT)
+        
+   
        
 class Arunachal_Pradesh(tk.Frame):
-
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
-
+        
+        self.t1 = 0
         img = tk.PhotoImage(file=IMAGE_PATH)
         background = tk.Label(self, image=img)
         background.pack(fill=BOTH, expand=1)
         background.image = img
 
-        notify = tk.Button(self, text="Enable Notification", bg="black", fg="White",font = NOTIFY_F, 
-                           padx = 5, pady = 5,command=self.notify)
-        notify.place(x=1,y=1)
-   
-        def change_on_hover(event):
-            notify['bg'] = 'red'
 
-        def return_to_normal(event):
-            notify['bg'] = "black"
-            
-        notify.bind('<Enter>', change_on_hover)
-        notify.bind('<Leave>', return_to_normal)
+        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+            if "Arunachal Pradesh" in m:
+                #print(CC, RC, DC)
+                frame_text = "Total Cases : " + f'{CC:n}' + "\n" + "Total Deaths : " + f'{DC:n}' + "\n" + "Recovered : " + f'{RC:n}'  
+                    
+      
+        def notify(t):
+            if "half hourly" in var.get():
+                self.t1 = 1800
+            if "hourly" in var.get():
+                self.t1 = 3600
+            if "4 hourly" in var.get():
+                self.t1 = 14400
+            if "8 hourly" in var.get():
+                self.t1 = 28800
+            if "12 hourly" in var.get():
+                self.t1 = 43200
+                
+            response = messagebox.askquestion("Desktop Notification settings", "Do you want a city specific Covid19 Notifications?")
+            if response == "yes":
+                messagebox.showinfo("Notification Settings", "\nRIGHT CLICK on the vertices of app window to Select your City")
+            else:  
+                for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+                    if "Arunachal Pradesh" in m:
+                        print(CC, RC, DC)
+                        frame_notify = "Arunachal Pradesh => | Total : " + f'{CC:n}' + " | Deaths : "  + f'{DC:n}' + " | Recovered : " + f'{RC:n}'
+                messagebox.showinfo("Notification details","Notification time span is : " + var.get() + "\nNotification Message : " + frame_notify)
         
-
-        self.setWidget(background,controller)
-        self.MHData(background)
-        self.bannerName(background)
-   
-       
-    def notify(self):
-       
-        response = messagebox.askquestion("messag box", "Hello world!")
-        if response == "yes":
-            notify_fun = tk.Tk()
-        else:
-            pass
-            #call plyer function
-         
-  
+                var.set("Enable Notifications")
+                
+                # calling plyer Notification
+                while True:
+                    plyer.notification.notify( title = "Covid19 cases of Arunachal_Pradesh",
+                                              message = frame_notify, app_icon = ICON,timeout = 20)
+                    time.sleep(self.t1)
+        
+                self.master.master.destroy()
+        
+             
+        # option menu for time duration
+        var = StringVar()
+        varList = ["half hourly", "hourly", "4 hourly", "8 hourly", "12 hourly"]
+        var.set("Enable Notifications")
+        notifyMenu = OptionMenu(self, var, *varList, command = notify)
+        notifyMenu.configure(bg = "black", fg = "White")
+        notifyMenu.place(x=1, y=1)
+        
             
+        self.setWidget(background,controller)
+        self.bannerName(background)
+        self.ARData(background, frame_text)
+      
+  
+      
+   # City list on rightclick         
+        def city_pop(event):
+            m.tk_popup(event.x_root, event.y_root)
+            m.grab_release()
+            
+        m = tk.Menu(background, tearoff = 0)
+        m.add_command(label = 'Anjaw', command = lambda:self.notify_func("Anjaw", "Arunachal_Pradesh"))
+        m.add_command(label = 'Changlang', command = lambda:self.notify_func("Changlang", "Arunachal_Pradesh"))
+        m.add_command(label = 'Dibang Valley', command = lambda:self.notify_func("Dibang Valley", "Arunachal_Pradesh"))
+        m.add_command(label = 'East Kameng', command = lambda:self.notify_func("East Kameng", "Arunachal_Pradesh"))
+        m.add_command(label = 'East Siang', command = lambda:self.notify_func("East Siang", "Arunachal_Pradesh"))
+        m.add_command(label = 'Kra-Daadi', command = lambda:self.notify_func("Kra-Daadi", "Arunachal_Pradesh"))
+        m.add_command(label = 'Kurung Kumey', command = lambda:self.notify_func("Kurung Kumey", "Arunachal_Pradesh"))
+        m.add_command(label = 'Lepa Rada', command = lambda:self.notify_func("Lepa Rada", "Arunachal_Pradesh"))
+        m.add_command(label = 'Longding', command = lambda:self.notify_func("Longding", "Arunachal_Pradesh"))
+        m.add_command(label = 'Lower Dibang Valley', command = lambda:self.notify_func("Lower Dibang Valley", "Arunachal_Pradesh"))
+        m.add_command(label = 'Lower Siang', command = lambda:self.notify_func("Lower Siang", "Arunachal_Pradesh"))
+        m.add_command(label = 'Lower Subansiri', command = lambda:self.notify_func("Lower Subansiri", "Arunachal_Pradesh"))
+        m.add_command(label = 'Namsai', command = lambda:self.notify_func("Namsai", "Arunachal_Pradesh"))
+        m.add_command(label = 'Pakke Kessang', command = lambda:self.notify_func("Pakke Kessang", "Arunachal_Pradesh"))
+        m.add_command(label = 'Papum Pare', command = lambda:self.notify_func("Papum Pare", "Arunachal_Pradesh"))
+        m.add_command(label = 'Shi Yomi', command = lambda:self.notify_func("Shi Yomi", "Arunachal_Pradesh"))
+        m.add_command(label = 'Siang', command = lambda:self.notify_func("Siang", "Arunachal_Pradesh"))
+        m.add_command(label = 'Tawang', command = lambda:self.notify_func("Tawang", "Arunachal_Pradesh"))
+        m.add_command(label = 'Tirap', command = lambda:self.notify_func("Tirap", "Arunachal_Pradesh"))
+        m.add_command(label = 'Upper Siang', command = lambda:self.notify_func("Upper Siang", "Arunachal_Pradesh"))
+        m.add_command(label = 'Upper Subansiri', command = lambda:self.notify_func("Upper Subansiri", "Arunachal_Pradesh"))
+        m.add_command(label = 'West Kameng', command = lambda:self.notify_func("West Kameng", "Arunachal_Pradesh"))
+        m.add_command(label = 'West Siang', command = lambda:self.notify_func("West Siang", "Arunachal_Pradesh"))
+
+
+        background.bind("<Button-3>", city_pop)
+      
+      
+                
+    def notify_func(self,city,state):
+        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+            if "Arunachal Pradesh" in m:
+                #print(CC, RC, DC)
+                frame_notify_ = "Arunachal_Pradesh => | Total : " + f'{CC:n}' + " | Deaths : "  + f'{DC:n}' + " | Recovered : " + f'{RC:n}'
+              
+        print(self.t1)
+        print(city, state)
+        city_data = notify_app_city_data(city, state) 
+        for m1, CC_, RC_, DC_ in zip(city_data.index, city_data["Confirmed cases"], city_data["Recovered cases"], city_data["Death toll"]):
+            #print(m1)
+            if city in m1:
+                print(CC_, RC_, DC_)
+                frame_city_text = city + " => Total Cases : " + f'{CC_:n}' + " | Total Deaths : " + f'{DC_:n}' +  " | Recovered : " + f'{RC_:n}'  
+            
+        if  frame_city_text:
+            messagebox.showinfo("Notification Details","Notification Time span is : " + str(self.t1) + " seconds" + "\nState : " + state + "\n" + "City : " + city + "\n" +
+                                "Details : " + frame_city_text)
+            while True:
+                plyer.notification.notify( title = "Covid19 cases of " + state + " ( " + city + " ) ",
+                                          message = frame_notify_ +"\n" + frame_city_text, app_icon = ICON, timeout = 10)
+                time.sleep(self.t1)
+            
+       
+            self.master.master.destroy()    
+       
+         
+             
     def setWidget(self, background,controller):
         load = PIL.Image.open(WORLD_IMG)
         render = ImageTk.PhotoImage(load)
@@ -617,7 +890,7 @@ class Arunachal_Pradesh(tk.Frame):
         img.image = render
         img.place(x=160, y=10)
 
-
+ 
     def bannerName(self, frame0_back):
 
         frame_0 = LabelFrame(frame0_back, padx=2, pady=2, bg='#336699')
@@ -626,14 +899,8 @@ class Arunachal_Pradesh(tk.Frame):
                          font=FRAME0_FONT, fg="White", bg = 'Black')
         f0_label.pack(side=RIGHT)
 
-    def MHData(self, frame1_back):
+    def ARData(self, frame1_back, frame_text):
         
-        
-        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
-            if "Arunachal Pradesh" in m:
-                #print(CC, RC, DC)
-                frame_text = "Total Cases : " + str(CC) + "\n" + "Total Deaths : " + str(DC) + "\n" + "Recovered : " + str(RC)  
-                
         frame_1 = LabelFrame(frame1_back, text = "Arunachal Pradesh", font = FRAME1_FONT, padx =30, pady =10, bg= 'Black', fg ="Red")
         frame_1.place(x=55, y=150)
 
@@ -641,46 +908,148 @@ class Arunachal_Pradesh(tk.Frame):
                          font = FRAME1_1, fg="White", bg = "black", justify = LEFT)
         f1_label.pack(side=LEFT)
 
+
 class Assam(tk.Frame):
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
-
+        
+        self.t1 = 0
         img = tk.PhotoImage(file=IMAGE_PATH)
         background = tk.Label(self, image=img)
         background.pack(fill=BOTH, expand=1)
         background.image = img
 
-        notify = tk.Button(self, text="Enable Notification", bg="black", fg="White",font = NOTIFY_F, 
-                           padx = 5, pady = 5,command=self.notify)
-        notify.place(x=1,y=1)
-   
-        def change_on_hover(event):
-            notify['bg'] = 'red'
 
-        def return_to_normal(event):
-            notify['bg'] = "black"
-            
-        notify.bind('<Enter>', change_on_hover)
-        notify.bind('<Leave>', return_to_normal)
+        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+            if "Assam" in m:
+                #print(CC, RC, DC)
+                frame_text = "Total Cases : " + f'{CC:n}' + "\n" + "Total Deaths : " + f'{DC:n}' + "\n" + "Recovered : " + f'{RC:n}'  
+                    
+      
+        def notify(t):
+            if "half hourly" in var.get():
+                self.t1 = 1800
+            if "hourly" in var.get():
+                self.t1 = 3600
+            if "4 hourly" in var.get():
+                self.t1 = 14400
+            if "8 hourly" in var.get():
+                self.t1 = 28800
+            if "12 hourly" in var.get():
+                self.t1 = 43200
+                
+            response = messagebox.askquestion("Desktop Notification settings", "Do you want a city specific Covid19 Notifications?")
+            if response == "yes":
+                messagebox.showinfo("Notification Settings", "\nRIGHT CLICK on the vertices of app window to Select your City")
+            else:  
+                for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+                    if "Assam" in m:
+                        print(CC, RC, DC)
+                        frame_notify = "Assam => | Total : " + f'{CC:n}' + " | Deaths : "  + f'{DC:n}' + " | Recovered : " + f'{RC:n}'
+                messagebox.showinfo("Notification details","Notification time span is : " + var.get() + "\nNotification Message : " + frame_notify)
         
-
-        self.setWidget(background,controller)
-        self.MHData(background)
-        self.bannerName(background)
-   
-       
-    def notify(self):
-       
-        response = messagebox.askquestion("messag box", "Hello world!")
-        if response == "yes":
-            notify_fun = tk.Tk()
-        else:
-            pass
-            #call plyer function
- 
-   
+                var.set("Enable Notifications")
+                
+                # calling plyer Notification
+                while True:
+                    plyer.notification.notify( title = "Covid19 cases of Assam",
+                                              message = frame_notify, app_icon = ICON,timeout = 20)
+                    time.sleep(self.t1)
+        
+                self.master.master.destroy()
+        
+             
+        # option menu for time duration
+        var = StringVar()
+        varList = ["half hourly", "hourly", "4 hourly", "8 hourly", "12 hourly"]
+        var.set("Enable Notifications")
+        notifyMenu = OptionMenu(self, var, *varList, command = notify)
+        notifyMenu.configure(bg = "black", fg = "White")
+        notifyMenu.place(x=1, y=1)
+        
             
+        self.setWidget(background,controller)
+        self.bannerName(background)
+        self.ASData(background, frame_text)
+      
+  
+      
+   # City list on rightclick         
+        def city_pop(event):
+            m.tk_popup(event.x_root, event.y_root)
+            m.grab_release()
+            
+        m = tk.Menu(background, tearoff = 0)
+        m.add_command(label = 'Baksa', command = lambda:self.notify_func("Baksa", "Assam"))
+        m.add_command(label = 'Barpeta', command = lambda:self.notify_func("Barpeta", "Assam"))
+        m.add_command(label = 'Biswanath', command = lambda:self.notify_func("Biswanath", "Assam"))
+        m.add_command(label = 'Bongaigaon', command = lambda:self.notify_func("Bongaigaon", "Assam"))
+        m.add_command(label = 'Cachar', command = lambda:self.notify_func("Cachar", "Assam"))
+        m.add_command(label = 'Charaideo', command = lambda:self.notify_func("Charaideo", "Assam"))
+        m.add_command(label = 'Chirang', command = lambda:self.notify_func("Chirang", "Assam"))
+        m.add_command(label = 'Darrang', command = lambda:self.notify_func("Darrang", "Assam"))
+        m.add_command(label = 'Dhemaji', command = lambda:self.notify_func("Dhemaji", "Assam"))
+        m.add_command(label = 'Dhubri', command = lambda:self.notify_func("Dhubri", "Assam"))
+        m.add_command(label = 'Dibrugarh', command = lambda:self.notify_func("Dibrugarh", "Assam"))
+        m.add_command(label = 'Dima Hasao', command = lambda:self.notify_func("Dima Hasao", "Assam"))
+        m.add_command(label = 'Goalpara', command = lambda:self.notify_func("Goalpara", "Assam"))
+        m.add_command(label = 'Golaghat', command = lambda:self.notify_func("Golaghat", "Assam"))
+        m.add_command(label = 'Hailakandi', command = lambda:self.notify_func("Hailakandi", "Assam"))
+        m.add_command(label = 'Hojai', command = lambda:self.notify_func("Hojai", "Assam"))
+        m.add_command(label = 'Jorhat', command = lambda:self.notify_func("Jorhat", "Assam"))
+        m.add_command(label = 'Kamrup', command = lambda:self.notify_func("Kamrup", "Assam"))
+        m.add_command(label = 'Kamrup Metropolitan', command = lambda:self.notify_func("Kamrup Metropolitan", "Assam"))
+        m.add_command(label = 'Karbi Anglong', command = lambda:self.notify_func("Karbi Anglong", "Assam"))
+        m.add_command(label = 'Karimganj', command = lambda:self.notify_func("Karimganj", "Assam"))
+        m.add_command(label = 'Kishanganj', command = lambda:self.notify_func("Kishanganj", "Assam"))
+        m.add_command(label = 'Kokrajhar', command = lambda:self.notify_func("Kokrajhar", "Assam"))
+        m.add_command(label = 'Lakhimpur', command = lambda:self.notify_func("Lakhimpur", "Assam"))
+        m.add_command(label = 'Majuli', command = lambda:self.notify_func("Majuli", "Assam"))
+        m.add_command(label = 'Morigaon', command = lambda:self.notify_func("Morigaon", "Assam"))
+        m.add_command(label = 'Nagaon', command = lambda:self.notify_func("Nagaon", "Assam"))
+        m.add_command(label = 'Nalbari', command = lambda:self.notify_func("Nalbari", "Assam"))
+        m.add_command(label = 'Sivasagar', command = lambda:self.notify_func("Sivasagar", "Assam"))
+        m.add_command(label = 'Sonitpur', command = lambda:self.notify_func("Sonitpur", "Assam"))
+        m.add_command(label = 'South Salmara Mankachar', command = lambda:self.notify_func("South Salmara Mankachar", "Assam"))
+        m.add_command(label = 'Tinsukia', command = lambda:self.notify_func("Tinsukia", "Assam"))
+        m.add_command(label = 'Udalguri', command = lambda:self.notify_func("Udalguri", "Assam"))
+        m.add_command(label = 'West Karbi Anglong', command = lambda:self.notify_func("West Karbi Anglong", "Assam"))
+       
+
+
+        background.bind("<Button-3>", city_pop)
+      
+      
+                
+    def notify_func(self,city,state):
+        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+            if "Assam" in m:
+                #print(CC, RC, DC)
+                frame_notify_ = "Assam=> | Total : " + f'{CC:n}' + " | Deaths : "  + f'{DC:n}' + " | Recovered : " + f'{RC:n}'
+              
+        print(self.t1)
+        print(city, state)
+        city_data = notify_app_city_data(city, state) 
+        for m1, CC_, RC_, DC_ in zip(city_data.index, city_data["Confirmed cases"], city_data["Recovered cases"], city_data["Death toll"]):
+            print(m1)
+            if city in m1:
+                print(CC_, RC_, DC_)
+                frame_city_text = city + " => Total Cases : " + f'{CC_:n}' + " | Total Deaths : " + f'{DC_:n}' +  " | Recovered : " + f'{RC_:n}'  
+            
+        if  frame_city_text:
+            messagebox.showinfo("Notification Details","Notification Time span is : " + str(self.t1) + " seconds" + "\nState : " + state + "\n" + "City : " + city + "\n" +
+                                "Details : " + frame_city_text)
+            # while True:
+            #     plyer.notification.notify( title = "Covid19 cases of " + state + " ( " + city + " ) ",
+            #                               message = frame_notify_ +"\n" + frame_city_text, app_icon = ICON, timeout = 10)
+            #     time.sleep(self.t1)
+            
+       
+            # self.master.master.destroy()    
+       
+         
+             
     def setWidget(self, background,controller):
         load = PIL.Image.open(WORLD_IMG)
         render = ImageTk.PhotoImage(load)
@@ -688,7 +1057,7 @@ class Assam(tk.Frame):
         img.image = render
         img.place(x=160, y=10)
 
-
+ 
     def bannerName(self, frame0_back):
 
         frame_0 = LabelFrame(frame0_back, padx=2, pady=2, bg='#336699')
@@ -697,14 +1066,8 @@ class Assam(tk.Frame):
                          font=FRAME0_FONT, fg="White", bg = 'Black')
         f0_label.pack(side=RIGHT)
 
-    def MHData(self, frame1_back):
+    def ASData(self, frame1_back, frame_text):
         
-        
-        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
-            if "Assam" in m:
-                #print(CC, RC, DC)
-                frame_text = "Total Cases : " + str(CC) + "\n" + "Total Deaths : " + str(DC) + "\n" + "Recovered : " + str(RC)  
-                
         frame_1 = LabelFrame(frame1_back, text = "Assam", font = FRAME1_FONT, padx =30, pady =10, bg= 'Black', fg ="Red")
         frame_1.place(x=55, y=150)
 
@@ -715,44 +1078,148 @@ class Assam(tk.Frame):
 
 
 class Bihar(tk.Frame):
-
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
- 
+        
+        self.t1 = 0
         img = tk.PhotoImage(file=IMAGE_PATH)
         background = tk.Label(self, image=img)
         background.pack(fill=BOTH, expand=1)
         background.image = img
 
-        notify = tk.Button(self, text="Enable Notification", bg="black", fg="White",font = NOTIFY_F, 
-                           padx = 5, pady = 5,command=self.notify)
-        notify.place(x=1,y=1)
-   
-        def change_on_hover(event):
-            notify['bg'] = 'red'
 
-        def return_to_normal(event):
-            notify['bg'] = "black"
+        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+            if "Bihar" in m:
+                #print(CC, RC, DC)
+                frame_text = "Total Cases : " + f'{CC:n}' + "\n" + "Total Deaths : " + f'{DC:n}' + "\n" + "Recovered : " + f'{RC:n}'  
+                    
+      
+        def notify(t):
+            if "half hourly" in var.get():
+                self.t1 = 1800
+            if "hourly" in var.get():
+                self.t1 = 3600
+            if "4 hourly" in var.get():
+                self.t1 = 14400
+            if "8 hourly" in var.get():
+                self.t1 = 28800
+            if "12 hourly" in var.get():
+                self.t1 = 43200
+                
+            response = messagebox.askquestion("Desktop Notification settings", "Do you want a city specific Covid19 Notifications?")
+            if response == "yes":
+                messagebox.showinfo("Notification Settings", "\nRIGHT CLICK on the vertices of app window to Select your City")
+            else:  
+                for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+                    if "Bihar" in m:
+                        print(CC, RC, DC)
+                        frame_notify = "Bihar => | Total : " + f'{CC:n}' + " | Deaths : "  + f'{DC:n}' + " | Recovered : " + f'{RC:n}'
+                messagebox.showinfo("Notification details","Notification time span is : " + var.get() + "\nNotification Message : " + frame_notify)
+        
+                var.set("Enable Notifications")
+                
+                # calling plyer Notification
+                while True:
+                    plyer.notification.notify( title = "Covid19 cases of Bihar",
+                                              message = frame_notify, app_icon = ICON,timeout = 20)
+                    time.sleep(self.t1)
+        
+                self.master.master.destroy()
+        
+             
+        # option menu for time duration
+        var = StringVar()
+        varList = ["half hourly", "hourly", "4 hourly", "8 hourly", "12 hourly"]
+        var.set("Enable Notifications")
+        notifyMenu = OptionMenu(self, var, *varList, command = notify)
+        notifyMenu.configure(bg = "black", fg = "White")
+        notifyMenu.place(x=1, y=1)
+        
             
-        notify.bind('<Enter>', change_on_hover)
-        notify.bind('<Leave>', return_to_normal)
+        self.setWidget(background,controller)
+        self.bannerName(background)
+        self.BRData(background, frame_text)
+      
+  
+      
+   # City list on rightclick         
+        def city_pop(event):
+            m.tk_popup(event.x_root, event.y_root)
+            m.grab_release()
+            
+        m = tk.Menu(background, tearoff = 0)
+        m.add_command(label = 'Araria', command = lambda:self.notify_func("Araria", "Bihar"))
+        m.add_command(label = 'Arwal', command = lambda:self.notify_func("Arwal", "Bihar"))
+        m.add_command(label = 'Aurangabad', command = lambda:self.notify_func("Aurangabad", "Bihar"))
+        m.add_command(label = 'Banka', command = lambda:self.notify_func("Banka", "Bihar"))
+        m.add_command(label = 'Begusarai', command = lambda:self.notify_func("Begusarai", "Bihar"))
+        m.add_command(label = 'Bhagalpur', command = lambda:self.notify_func("Bhagalpur", "Bihar"))
+        m.add_command(label = 'Bhojpur', command = lambda:self.notify_func("Bhojpur", "Bihar"))
+        m.add_command(label = 'Buxar', command = lambda:self.notify_func("Buxar", "Bihar"))
+        m.add_command(label = 'Darbhanga', command = lambda:self.notify_func("Darbhanga", "Bihar"))
+        m.add_command(label = 'East Champaran', command = lambda:self.notify_func("East Champaran", "Bihar"))
+        m.add_command(label = 'Gaya', command = lambda:self.notify_func("Gaya", "Bihar"))
+        m.add_command(label = 'Gopalganj', command = lambda:self.notify_func("Gopalganj", "Bihar"))
+        m.add_command(label = 'Jamui', command = lambda:self.notify_func("Jamui", "Bihar"))
+        m.add_command(label = 'Jehanabad', command = lambda:self.notify_func("Jehanabad", "Bihar"))
+        m.add_command(label = 'Kaimur', command = lambda:self.notify_func("Kaimur", "Bihar"))
+        m.add_command(label = 'Katihar', command = lambda:self.notify_func("Katihar", "Bihar"))
+        m.add_command(label = 'Khagaria', command = lambda:self.notify_func("Khagaria", "Bihar"))
+        m.add_command(label = 'Kishanganj', command = lambda:self.notify_func("Kishanganj", "Bihar"))
+        m.add_command(label = 'Lakhisarai', command = lambda:self.notify_func("Lakhisarai", "Bihar"))
+        m.add_command(label = 'Madhepura', command = lambda:self.notify_func("Madhepura", "Bihar"))
+        m.add_command(label = 'Madhubani', command = lambda:self.notify_func("Madhubani", "Bihar"))
+        m.add_command(label = 'Munger', command = lambda:self.notify_func("Munger", "Bihar"))
+        m.add_command(label = 'Muzaffarpur', command = lambda:self.notify_func("Muzaffarpur", "Bihar"))
+        m.add_command(label = 'Nalanda', command = lambda:self.notify_func("Nalanda", "Bihar"))
+        m.add_command(label = 'Nawada', command = lambda:self.notify_func("Nawada", "Bihar"))
+        m.add_command(label = 'Patna', command = lambda:self.notify_func("Patna", "Bihar"))
+        m.add_command(label = 'Purnia', command = lambda:self.notify_func("Purnia", "Bihar"))
+        m.add_command(label = 'Rohtas', command = lambda:self.notify_func("Rohtas", "Bihar"))
+        m.add_command(label = 'Saharsa', command = lambda:self.notify_func("Saharsa", "Bihar"))
+        m.add_command(label = 'Samastipur', command = lambda:self.notify_func("Samastipur", "Bihar"))
+        m.add_command(label = 'Saran', command = lambda:self.notify_func("Saran", "Bihar"))
+        m.add_command(label = 'Sheikhpura', command = lambda:self.notify_func("Sheikhpura", "Bihar"))
+        m.add_command(label = 'Sheohar', command = lambda:self.notify_func("Sheohar", "Bihar"))
+        m.add_command(label = 'Sitamarhi', command = lambda:self.notify_func("Sitamarhi", "Bihar"))
+        m.add_command(label = 'Siwan', command = lambda:self.notify_func("Siwan", "Bihar"))
+        m.add_command(label = 'Supaul', command = lambda:self.notify_func("Supaul", "Bihar"))
+        m.add_command(label = 'Vaishali', command = lambda:self.notify_func("Vaishali", "Bihar"))
+        m.add_command(label = 'West Champaran', command = lambda:self.notify_func("West Champaran", "Bihar"))
         
 
-        self.setWidget(background,controller)
-        self.MHData(background)
-        self.bannerName(background)
-   
-       
-    def notify(self):
-       
-        response = messagebox.askquestion("messag box", "Hello world!")
-        if response == "yes":
-            notify_fun = tk.Tk()
-        else:
-            pass
-            #call plyer function
-  
+        background.bind("<Button-3>", city_pop)
+      
+      
+                
+    def notify_func(self,city,state):
+        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+            if "Bihar" in m:
+                #print(CC, RC, DC)
+                frame_notify_ = "Bihar=> | Total : " + f'{CC:n}' + " | Deaths : "  + f'{DC:n}' + " | Recovered : " + f'{RC:n}'
+              
+        print(self.t1)
+        print(city, state)
+        city_data = notify_app_city_data(city, state) 
+        for m1, CC_, RC_, DC_ in zip(city_data.index, city_data["Confirmed cases"], city_data["Recovered cases"], city_data["Death toll"]):
+            #print(m1)
+            if city in m1:
+                print(CC_, RC_, DC_)
+                frame_city_text = city + " => Total Cases : " + f'{CC_:n}' + " | Total Deaths : " + f'{DC_:n}' +  " | Recovered : " + f'{RC_:n}'  
             
+        if  frame_city_text:
+            messagebox.showinfo("Notification Details","Notification Time span is : " + str(self.t1) + " seconds" + "\nState : " + state + "\n" + "City : " + city + "\n" +
+                                "Details : " + frame_city_text)
+            while True:
+                plyer.notification.notify( title = "Covid19 cases of " + state + " ( " + city + " ) ",
+                                          message = frame_notify_ +"\n" + frame_city_text, app_icon = ICON, timeout = 10)
+                time.sleep(self.t1)
+            
+       
+            self.master.master.destroy()    
+       
+         
+             
     def setWidget(self, background,controller):
         load = PIL.Image.open(WORLD_IMG)
         render = ImageTk.PhotoImage(load)
@@ -760,7 +1227,7 @@ class Bihar(tk.Frame):
         img.image = render
         img.place(x=160, y=10)
 
-
+ 
     def bannerName(self, frame0_back):
 
         frame_0 = LabelFrame(frame0_back, padx=2, pady=2, bg='#336699')
@@ -769,61 +1236,122 @@ class Bihar(tk.Frame):
                          font=FRAME0_FONT, fg="White", bg = 'Black')
         f0_label.pack(side=RIGHT)
 
-    def MHData(self, frame1_back):
+    def BRData(self, frame1_back, frame_text):
         
-        
-        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
-            if "Bihar" in m:
-                #print(CC, RC, DC)
-                frame_text = "Total Cases : " + str(CC) + "\n" + "Total Deaths : " + str(DC) + "\n" + "Recovered : " + str(RC)  
-                
         frame_1 = LabelFrame(frame1_back, text = "Bihar", font = FRAME1_FONT, padx =30, pady =10, bg= 'Black', fg ="Red")
         frame_1.place(x=55, y=150)
 
         f1_label = Label(frame_1, text=frame_text,
                          font = FRAME1_1, fg="White", bg = "black", justify = LEFT)
-        f1_label.pack(side=LEFT)    
- 
+        f1_label.pack(side=LEFT)
+
+
     
+
 class Chandigarh(tk.Frame):
     
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
-
+        
+        self.t1 = 0
         img = tk.PhotoImage(file=IMAGE_PATH)
         background = tk.Label(self, image=img)
         background.pack(fill=BOTH, expand=1)
         background.image = img
 
-        notify = tk.Button(self, text="Enable Notification", bg="black", fg="White",font = NOTIFY_F, 
-                           padx = 5, pady = 5,command=self.notify)
-        notify.place(x=1,y=1)
-   
-        def change_on_hover(event):
-            notify['bg'] = 'red'
 
-        def return_to_normal(event):
-            notify['bg'] = "black"
+        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+            if "Chandigarh" in m:
+                #print(CC, RC, DC)
+                frame_text = "Total Cases : " + f'{CC:n}' + "\n" + "Total Deaths : " + f'{DC:n}' + "\n" + "Recovered : " + f'{RC:n}'  
+                    
+      
+        def notify(t):
+            if "half hourly" in var.get():
+                self.t1 = 1800
+            if "hourly" in var.get():
+                self.t1 = 3600
+            if "4 hourly" in var.get():
+                self.t1 = 14400
+            if "8 hourly" in var.get():
+                self.t1 = 28800
+            if "12 hourly" in var.get():
+                self.t1 = 43200
+                
+             
+            for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+                if "Chandigarh" in m:
+                    print(CC, RC, DC)
+                    frame_notify = "Chandigarh => | Total : " + f'{CC:n}' + " | Deaths : "  + f'{DC:n}' + " | Recovered : " + f'{RC:n}'
+            messagebox.showinfo("Notification details","Notification time span is : " + var.get() + "\nNotification Message : " + frame_notify)
+    
+            var.set("Enable Notifications")
             
-        notify.bind('<Enter>', change_on_hover)
-        notify.bind('<Leave>', return_to_normal)
+            # calling plyer Notification
+            while True:
+                plyer.notification.notify( title = "Covid19 cases of Chandigarh",
+                                          message = frame_notify, app_icon = ICON,timeout = 20)
+                time.sleep(self.t1)
+    
+            self.master.master.destroy()
+    
+             
+        # option menu for time duration
+        var = StringVar()
+        varList = ["half hourly", "hourly", "4 hourly", "8 hourly", "12 hourly"]
+        var.set("Enable Notifications")
+        notifyMenu = OptionMenu(self, var, *varList, command = notify)
+        notifyMenu.configure(bg = "black", fg = "White")
+        notifyMenu.place(x=1, y=1)
         
-
+            
         self.setWidget(background,controller)
-        self.MHData(background)
         self.bannerName(background)
-   
-       
-    def notify(self):
-       
-        response = messagebox.askquestion("messag box", "Hello world!")
-        if response == "yes":
-            notify_fun = tk.Tk()
-        else:
-            pass
-            #call plyer function
+        self.CHData(background, frame_text)
+      
   
+      
+   # City list on rightclick         
+        def city_pop(event):
+            m.tk_popup(event.x_root, event.y_root)
+            m.grab_release()
+            
+        m = tk.Menu(background, tearoff = 0)
+        m.add_command(label = 'Chandigarh', command = lambda:self.notify_func("Chandigarh", "Chandigarh"))
           
+
+        background.bind("<Button-3>", city_pop)
+      
+      
+                
+    def notify_func(self,city,state):
+        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
+            if "Chandigarh" in m:
+                #print(CC, RC, DC)
+                frame_notify_ = "Chandigarh=> | Total : " + f'{CC:n}' + " | Deaths : "  + f'{DC:n}' + " | Recovered : " + f'{RC:n}'
+              
+        print(self.t1)
+        print(city, state)
+        city_data = notify_app_city_data(city, state) 
+        for m1, CC_, RC_, DC_ in zip(city_data.index, city_data["Confirmed cases"], city_data["Recovered cases"], city_data["Death toll"]):
+            #print(m1)
+            if city in m1:
+                print(CC_, RC_, DC_)
+                frame_city_text = city + " => Total Cases : " + f'{CC_:n}' + " | Total Deaths : " + f'{DC_:n}' +  " | Recovered : " + f'{RC_:n}'  
+            
+        if  frame_city_text:
+            messagebox.showinfo("Notification Details","Notification Time span is : " + str(self.t1) + " seconds" + "\nState : " + state + "\n" + "City : " + city + "\n" +
+                                "Details : " + frame_city_text)
+            while True:
+                plyer.notification.notify( title = "Covid19 cases of " + state + " ( " + city + " ) ",
+                                          message = frame_notify_ +"\n" + frame_city_text, app_icon = ICON, timeout = 10)
+                time.sleep(self.t1)
+            
+       
+            self.master.master.destroy()    
+       
+         
+             
     def setWidget(self, background,controller):
         load = PIL.Image.open(WORLD_IMG)
         render = ImageTk.PhotoImage(load)
@@ -831,7 +1359,7 @@ class Chandigarh(tk.Frame):
         img.image = render
         img.place(x=160, y=10)
 
-
+ 
     def bannerName(self, frame0_back):
 
         frame_0 = LabelFrame(frame0_back, padx=2, pady=2, bg='#336699')
@@ -840,14 +1368,8 @@ class Chandigarh(tk.Frame):
                          font=FRAME0_FONT, fg="White", bg = 'Black')
         f0_label.pack(side=RIGHT)
 
-    def MHData(self, frame1_back):
+    def CHData(self, frame1_back, frame_text):
         
-        
-        for m, CC, RC, DC in zip(merged.index, merged["Confirmed cases"], merged["Recovered cases"], merged["Death toll"]):
-            if "Chandigarh" in m:
-                #print(CC, RC, DC)
-                frame_text = "Total Cases : " + str(CC) + "\n" + "Total Deaths : " + str(DC) + "\n" + "Recovered : " + str(RC)  
-                
         frame_1 = LabelFrame(frame1_back, text = "Chandigarh", font = FRAME1_FONT, padx =30, pady =10, bg= 'Black', fg ="Red")
         frame_1.place(x=55, y=150)
 
@@ -855,6 +1377,9 @@ class Chandigarh(tk.Frame):
                          font = FRAME1_1, fg="White", bg = "black", justify = LEFT)
         f1_label.pack(side=LEFT)
 
+
+    
+# TODO from here ->
 
 class Chhattisgarh(tk.Frame):
 

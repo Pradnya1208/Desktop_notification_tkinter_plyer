@@ -6,5 +6,5 @@ save_non_project_files = False
 
 [main]
 version = 0.2.0
-recent_files = ['notify.py', 'requirements.txt', 'tkinter_window.py']
+recent_files = ['states_data.py', 'tkmain.py', 'del.py', 'temp.py', 'Indian_cities.py', 'Indian_states.py', 'statewise_data.py', 'city_data.py']
 

@@ -149,17 +149,17 @@ for st in state_name:
        
             
             with open(file_t, 'w') as f:
-                f.writelines("State, State Code, Cities,")
+                f.writelines("State,State Code,Cities,")
                 f.writelines(dtcolNames)
                 f.writelines(covidData)
         
             with open(file_r, 'w') as f:
-                f.writelines("State, State Code, Cities,")
+                f.writelines("State,State Code,Cities,")
                 f.writelines(dtcolNames)
                 f.writelines(covidRec)
     
             with open(file_d, 'w') as f:
-                f.writelines("State, State Code, Cities,")
+                f.writelines("State,State Code,Cities,")
                 f.writelines(dtcolNames)
                 f.writelines(covidDeath)            
         
